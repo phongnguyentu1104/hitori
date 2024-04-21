@@ -94,28 +94,45 @@ class HitoriPuzzleSolover:
     def count_adjacent_occurrences(self, array, row, col):
         # Đếm số lần xuất hiện của giá trị tại ô (row, col) trong hàng và cột tương ứng
         m = 0
-        for i in range(self.level):
+        for i in range(input_level):
             if array[row][i] == array[row][col] and i != col:
                 m += 1
             if array[i][col] == array[row][col] and i != row:
                 m += 1
         return m
 
-    def is_not_good_position(self, array, row, col):
-        #Kiểm tra ô có nen lay hay không
-        count_before = sum(1 for i in range(self.level) if i < row and array[i][col] == array[row][col]) + sum(1 for i in range(self.level) if i < col and array[row][i] == array[row][col])
-        count_last = sum(1 for i in range(self.level) if i > row and array[i][col] == array[row][col]) + sum(1 for i in range(self.level) if i > col and array[row][i] == array[row][col])
-        if count_before > 0:
+    def is_not_good_position(self, matrix, r, c):
+        listOfOp = []
+        countBefore = 0
+        for i in range (input_level):
+            if i<r and matrix[i][c] == matrix[r][c]:
+                countBefore = countBefore+1
+            if i<c and matrix[r][i] == matrix[r][c]:
+                countBefore = countBefore+1
+        if countBefore > 0:
             return False
-        if count_last == 0:
+        countLast = 0
+        for i in range (input_level):
+            if i>r and matrix[i][c] == matrix[r][c]:
+                countLast = countLast+1
+            if i>c and matrix[r][i] == matrix[r][c]:
+                countLast = countLast+1
+        if countLast == 0:
             return False
-        list_of_op = [self.count_adjacent_occurrences(array, row, i) for i in range(self.level) if col != i and array[row][col] == array[row][i]] + [self.count_adjacent_occurrences(array, i, col) for i in range(self.level) if row != i and array[row][col] == array[i][col]]
-        return len(list_of_op) == 0 or self.count_adjacent_occurrences(array, row, col) < min(list_of_op)
-
+        listOfOp = []
+        for i in range (input_level):
+            if c != i and matrix[r][c] == matrix[r][i]:
+                listOfOp.append(self.count_adjacent_occurrences(matrix,r,i))
+            if r != i and matrix[r][c] == matrix[i][c]:
+                listOfOp.append(self.count_adjacent_occurrences(matrix,i,c))
+        
+        if len(listOfOp)==0 or self.count_adjacent_occurrences(matrix,r,c) < min(listOfOp):
+            return True
+        return False
     def is_valid_move(self, array, row, col, op, is_fill):
         #Kiểm tra nước đi có hợp lệ.
-        def check_row_column(lst):
-            return lst.count(op) > 1
+        def check_row_column(lst: list):
+            return True if lst.count(op) > 1 else False
 
         def has_adjacent_patterns():
             
@@ -141,7 +158,9 @@ class HitoriPuzzleSolover:
                 return False
             return True
 
-        def non_shape_pattern(i, j):
+        def non_shape_pattern(i: int, j: int):
+            temp = array
+            temp[row][col] = 'x'
             if (i == j == 0 and array[0][1] == 'x' and array[1][0] == 'x'):
                 return True
             elif (i == 0 and j == self.level - 1 and array[0][j-1] == 'x' and array[1][j] == 'x'):
@@ -169,10 +188,10 @@ class HitoriPuzzleSolover:
                         return False
             return True
         
-        if is_fill:
+        if is_fill == True:
             if (check_row_column(array[row]) or check_row_column([array[i][col] for i in range(self.level)])) and has_adjacent_patterns() and is_non_shaded_valid():
                 return True
-        if not is_fill:
+        if is_fill == False:
             for i in range(col):
                 if (array[row][i] == op):
                     return False
@@ -180,7 +199,21 @@ class HitoriPuzzleSolover:
                 if (array[i][col] == op):
                     return False
             return True
-    
+
+f = open('testcase5x5.txt', 'r')
+input_data = f.read().split('\n')
+input_level = 0
+input_array = []
+stacks = []
+for i in range(len(input_data)):
+        temp = input_data[i].split(',')
+        input_level = len(temp)
+        input_row = []
+        
+        for j in range(input_level):
+            input_row.append(temp[j])
+        input_array.append(input_row)
+
 def process_memory():
     process = psutil.Process(os.getpid())
     mem_info = process.memory_info()
@@ -188,18 +221,6 @@ def process_memory():
 
 start = default_timer()
 memory_before = process_memory()
-stacks = []
-with open('testcase10x10.txt', 'r') as f:
-    input_data = f.read().split('\n')
-    input_level = 0
-    input_array = []
-    for i in range(len(input_data)):
-        temp = input_data[i].split(',')
-        input_level = len(temp)
-        input_row = []
-        for j in range(input_level):
-            input_row.append(temp[j])
-        input_array.append(input_row)
 
 solver = HitoriPuzzleSolover(input_array, input_level)
 solver.solve()
